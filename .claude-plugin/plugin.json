@@ -1,0 +1,8 @@
+{
+  "name": "usage-file",
+  "version": "0.1.0",
+  "description": "Writes the session's rate-limit windows, context fill and cost to one local JSON file whenever they move, and shows the windows in the status line.",
+  "author": { "name": "Nightlab" },
+  "license": "MIT",
+  "keywords": ["claude-code-mod", "rate-limits", "usage", "statusline", "headless"]
+}

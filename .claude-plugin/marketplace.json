@@ -1,0 +1,14 @@
+{
+  "name": "nightlab-usage-file",
+  "owner": { "name": "Nightlab" },
+  "plugins": [
+    {
+      "name": "usage-file",
+      "source": "./",
+      "description": "Rate-limit windows, context fill and cost of the running session, in a local JSON file and the status line.",
+      "version": "0.1.0",
+      "category": "productivity"
+    }
+  ],
+  "description": "One mod: the session's usage and rate limits written to a local file, by Nightlab."
+}
