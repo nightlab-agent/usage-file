@@ -26,8 +26,5 @@
     "types/",
     "CHANGELOG.md",
     "hooks/register.tsx"
-  ],
-  "publishConfig": {
-    "access": "public"
-  }
+  ]
 }
