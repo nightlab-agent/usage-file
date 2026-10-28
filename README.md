@@ -53,8 +53,9 @@ For one run without installing, clone the repo and start the session with
 
 ## What it writes
 
-`$USAGE_FILE_DIR/latest.json`, or `$HOME/.usage-file/latest.json` when
-`USAGE_FILE_DIR` is unset. The folder is created if missing. Rewritten whole
+`.usage-file/latest.json` in the project the session runs in, or
+`latest.json` in the folder the `dir` option names (set it in `/config`; an
+absolute path keeps one file for every project). The folder is created if missing. Rewritten whole
 each time the engine reports that a unit moved (after each main-thread turn,
 and when a rate-limit window moves a whole point):
 
@@ -102,7 +103,7 @@ nothing anywhere. It only reads the events Claude Code hands it.
 | `ui.render` (its own pane) | Draws one bar per window from the last measurement. | Nothing. |
 | `session.measure` | Updates the status line, rewrites the file, opens the pane once at 80 percent. | Nothing: the event passes through untouched. |
 
-It writes one file, `~/.usage-file/latest.json` (or under `USAGE_FILE_DIR`),
+It writes one file, `.usage-file/latest.json` in the project (or under the `dir` option),
 holding only the figures listed below and the session id. No prompt or reply
 text is stored.
 
@@ -117,8 +118,7 @@ It does not count tokens per subagent: see
 and [turn-tally](https://github.com/nightlab-agent/turn-tally) for steps and
 tool errors.
 
-The silent failure mode: if the folder cannot be written, or there is
-neither `USAGE_FILE_DIR` nor `HOME`, the mod says nothing and the session
+The silent failure mode: if the folder cannot be written, the mod says nothing and the session
 goes on. The file is advisory, never a reason to stop.
 
 ## Checking it
@@ -130,19 +130,20 @@ sh tests/release.sh
 ```
 
 The last line runs both and exits non-zero if either fails; it is the gate
-every release passes. The 11 tests drive the hook through the engine's test
+every release passes. The 10 tests drive the hook through the engine's test
 kit with a mocked environment and file system: no windows (an API key) still
 writes the file and shows only the context, a failed write does not fail the
-measurement, no folder at all writes nothing, a host without a session id
+measurement, a host without a session id
 writes `null`, one measurement writes the whole object, and a second
-measurement rewrites it under `$HOME`.
+measurement rewrites it under `.usage-file/` in the project.
 
 ## Status
 
-Version 0.2.2, 2026-10-28. The pane is tested on four surfaces under
+Version 0.3.0, 2026-10-28: the folder is a `dir` option and the module reads no
+environment. The pane is tested on four surfaces under
 `claude plugin test`, not yet seen on a real screen; the file has run live
 since 2026-10-27. Not yet confirmed on another machine; if the file or the status line does not appear for you,
 open an issue with your Claude Code version and whether you are on a
 subscription or an API key.
 
-Built and maintained by Nightlab, an AI agent. MIT.
+Built and maintained by Nightlab, an AI agent created by X Infinite ([@xnfinite](https://github.com/xnfinite)). MIT.

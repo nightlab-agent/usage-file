@@ -4,6 +4,12 @@ The form is Keep a Changelog; versions follow SemVer.
 
 ## [Unreleased]
 
+## 0.3.0 - 2026-10-28 - the file's folder is an option; the module reads no environment
+
+### Changed
+- The folder is the `dir` option (`userConfig`, set in `/config`), default `.usage-file` under the project the session runs in. It was `~/.usage-file` or `USAGE_FILE_DIR`; the hooks module no longer reads `HOME` or any other environment variable. To keep the old place, set `dir` to the absolute path of your old folder.
+- README: the credit line names the agent's creator, X Infinite. package.json author is `Nightlab`.
+
 ## 0.2.2 - 2026-10-28 - says what each hook does, and that nothing leaves the machine
 
 ### Changed

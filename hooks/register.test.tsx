@@ -2,17 +2,16 @@ import { expect, mock, test } from 'claude-code/testing'
 import type { SessionMeasureInput } from 'claude-code'
 
 // Each test stands for the engine beneath the plugin: it answers `$.fs.write`,
-// `$.ui.status`, `$.env.get` and `$.session.id`, raises `session.measure`,
+// `$.ui.status` and `$.session.id`, raises `session.measure`,
 // and reads what the plugin wrote. Nothing here touches the real file system.
 
 type Written = { path: string; text: string }
 type On = Parameters<Parameters<typeof test>[1]>[1]
 type Dollar = Parameters<Parameters<typeof test>[1]>[0]
 
-const world = (on: On, env: Record<string, string>, opts: { writeFails?: boolean; noSession?: boolean } = {}) => {
+const world = (on: On, opts: { writeFails?: boolean; noSession?: boolean } = {}) => {
   const writes: Written[] = []
   const statuses: (string | undefined)[] = []
-  mock.env(on, env)
   on('fs.write', (_, e) => {
     if (opts.writeFails) throw new Error('read-only file system')
     writes.push({ path: e.path, text: e.text })
@@ -44,7 +43,7 @@ const measurement = (over: Partial<SessionMeasureInput> = {}): SessionMeasureInp
 const parsed = (w: Written) => JSON.parse(w.text) as Record<string, any>
 
 test('off a subscription (no rate-limit windows) the file is still written, with an empty list and no window in the status line', async ($, on) => {
-  const { writes, statuses } = world(on, { USAGE_FILE_DIR: '/usage', HOME: '/home/someone' })
+  const { writes, statuses } = world(on)
   await $.session.measure(measurement({ rateLimits: [], cost: undefined, changed: ['context'] }))
   expect(writes.length).toBe(1)
   const got = parsed(writes[0]!)
@@ -54,28 +53,22 @@ test('off a subscription (no rate-limit windows) the file is still written, with
 })
 
 test('a failed write does not fail the measurement and still updates the status line', async ($, on) => {
-  const { writes, statuses } = world(on, { USAGE_FILE_DIR: '/nowhere' }, { writeFails: true })
+  const { writes, statuses } = world(on, { writeFails: true })
   const r = await $.session.measure(measurement())
   expect(writes.length).toBe(0)
   expect(r.changed.length).toBe(3)
   expect(statuses.at(-1)).toBe('5h 23.5% | 7d 61% | ctx 20% | $1.23')
 })
 
-test('without HOME and without USAGE_FILE_DIR nothing is written and the session goes on', async ($, on) => {
-  const { writes } = world(on, {})
-  const r = await $.session.measure(measurement())
-  expect(writes.length).toBe(0)
-  expect(r.changed.length).toBe(3)
-})
 
 test('a host with no session id writes the file with session null', async ($, on) => {
-  const { writes } = world(on, { USAGE_FILE_DIR: '/usage' }, { noSession: true })
+  const { writes } = world(on, { noSession: true })
   await $.session.measure(measurement())
   expect(parsed(writes[0]!).session).toBe(null)
 })
 
-test('one measurement writes one JSON file under USAGE_FILE_DIR with the windows, the context, the cost and what changed', async ($, on) => {
-  const { writes, statuses } = world(on, { USAGE_FILE_DIR: '/usage', HOME: '/home/someone' })
+test('one measurement writes one JSON file under the dir option with the windows, the context, the cost and what changed', { options: { dir: '/usage' } }, async ($, on) => {
+  const { writes, statuses } = world(on)
   await $.session.measure(measurement())
   expect(writes.length).toBe(1)
   expect(writes[0]!.path).toBe('/usage/latest.json')
@@ -94,13 +87,14 @@ test('one measurement writes one JSON file under USAGE_FILE_DIR with the windows
   expect(statuses.at(-1)).toBe('5h 23.5% | 7d 61% | ctx 20% | $1.23')
 })
 
-test('without USAGE_FILE_DIR the file goes under $HOME/.usage-file/, and a second measurement rewrites it whole', async ($, on) => {
-  const { writes } = world(on, { HOME: '/home/someone' })
+test('with no folder set the file goes under .usage-file/ in the project, and a second measurement rewrites it whole', async ($, on) => {
+  const { writes } = world(on)
   await $.session.measure(measurement())
   await $.session.measure(measurement({ context: { window: 200000, percent: 35 }, changed: ['context'] }))
   expect(writes.length).toBe(2)
-  expect(writes[0]!.path).toBe('/home/someone/.usage-file/latest.json')
-  expect(writes[1]!.path).toBe('/home/someone/.usage-file/latest.json')
+  // The engine resolves a relative path against the session's folder.
+  expect(writes[0]!.path).toMatch(/^\/.*\/\.usage-file\/latest\.json$/)
+  expect(writes[1]!.path).toBe(writes[0]!.path)
   const got = parsed(writes[1]!)
   expect(got.context.percent).toBe(35)
   expect(got.context.tokens).toBe(null)
@@ -115,7 +109,7 @@ const PANE = {
 } as const
 
 test('the pane draws one bar per window with the time to its reset, on every surface', async ($, on) => {
-  world(on, { USAGE_FILE_DIR: '/usage' })
+  world(on)
   const soon = new Date(Date.now() + (2 * 60 + 5) * 60000 + 30000).toISOString()
   await $.session.measure(measurement({ rateLimits: [{ kind: 'five_hour', percentUsed: 23.5, resetsAt: soon }, { kind: 'seven_day', percentUsed: 61 }] }))
   for (const surface of ['terminal', 'desktop', 'vscode', 'mobile'] as const) {
@@ -131,7 +125,7 @@ test('the pane draws one bar per window with the time to its reset, on every sur
 })
 
 test('the pane opens itself once, at the first window that reaches 80 percent, and never below it', async ($, on) => {
-  world(on, { USAGE_FILE_DIR: '/usage' })
+  world(on)
   const opens: string[] = []
   on('ui.open', (_, e) => {
     opens.push(e.id)
@@ -145,7 +139,7 @@ test('the pane opens itself once, at the first window that reaches 80 percent, a
 })
 
 test('a surface that seats no panes refuses the open, and the file is still written', async ($, on) => {
-  const { writes } = world(on, { USAGE_FILE_DIR: '/usage' })
+  const { writes } = world(on)
   on('ui.open', () => {
     throw new Error('no panes on this surface')
   })
@@ -155,7 +149,7 @@ test('a surface that seats no panes refuses the open, and the file is still writ
 })
 
 test('the command opens the pane and answers with the figures, or says none came yet', async ($, on) => {
-  world(on, { USAGE_FILE_DIR: '/usage' })
+  world(on)
   const opens: string[] = []
   on('ui.open', (_, e) => {
     opens.push(e.id)

@@ -99,7 +99,7 @@ const shownStatus = (s: Shown) =>
     changed: [],
   } as SessionMeasureInput) ?? 'No figures yet.'
 
-export const register: Register = on => {
+export const register: Register = (on, options) => {
   on('session.start', async ($, e, next) => {
     try {
       await $.command.register({ name: 'usage-file', description: 'Show the rate-limit windows, context and cost of this session, in a pane' })
@@ -161,17 +161,14 @@ export const register: Register = on => {
       $.ui.open({ id: PANE, title: TITLE }).catch(() => undefined)
     }
     try {
-      const home = await $.env.get('HOME')
-      const dir = (await $.env.get('USAGE_FILE_DIR')) || (home ? `${home}/.usage-file` : '')
-      if (dir) {
-        let session = ''
-        try {
-          session = await $.session.id()
-        } catch {
-          // no session id on this host: the file says null
-        }
-        await $.fs.write(`${dir}/latest.json`, fileText(e, session, new Date()))
+      const dir = String(options.dir || '.usage-file')
+      let session = ''
+      try {
+        session = await $.session.id()
+      } catch {
+        // no session id on this host: the file says null
       }
+      await $.fs.write(`${dir}/latest.json`, fileText(e, session, new Date()))
     } catch {
       // unwritable folder: the file is advisory, the session goes on
     }
