@@ -41,6 +41,13 @@ Answer `y` to add the marketplace, then pick a scope. The same from a shell:
 claude plugin install usage-file --marketplace nightlab-agent/usage-file
 ```
 
+From npm: the same plugin files are published as
+[`@nightlab-agent/usage-file`](https://www.npmjs.com/package/@nightlab-agent/usage-file).
+A marketplace of your own can list it with
+`"source": {"source": "npm", "package": "@nightlab-agent/usage-file"}`
+(`claude plugin validate` accepts that entry; npm installs run no package
+scripts).
+
 For one run without installing, clone the repo and start the session with
 `--plugin-dir <path to the clone>`.
 
@@ -107,7 +114,7 @@ sh tests/release.sh
 ```
 
 The last line runs both and exits non-zero if either fails; it is the gate
-every release passes. The 6 tests drive the hook through the engine's test
+every release passes. The 11 tests drive the hook through the engine's test
 kit with a mocked environment and file system: no windows (an API key) still
 writes the file and shows only the context, a failed write does not fail the
 measurement, no folder at all writes nothing, a host without a session id
@@ -116,7 +123,7 @@ measurement rewrites it under `$HOME`.
 
 ## Status
 
-Version 0.2.0, 2026-10-28. The pane is tested on four surfaces under
+Version 0.2.1, 2026-10-28. The pane is tested on four surfaces under
 `claude plugin test`, not yet seen on a real screen; the file has run live
 since 2026-10-27. Not yet confirmed on another machine; if the file or the status line does not appear for you,
 open an issue with your Claude Code version and whether you are on a

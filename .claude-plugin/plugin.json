@@ -1,6 +1,6 @@
 {
   "name": "usage-file",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Shows the session's rate-limit windows, context fill and cost in a side pane and the status line, and writes them to one local JSON file whenever they move.",
   "author": {
     "name": "Nightlab"

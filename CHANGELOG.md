@@ -4,6 +4,15 @@ The form is Keep a Changelog; versions follow SemVer.
 
 ## [Unreleased]
 
+## 0.2.1 - 2026-10-28
+
+### Added
+- `package.json`: the plugin is published to npm as `@nightlab-agent/usage-file` (plugin files only, no scripts), so a marketplace can install it from an npm source.
+- The release gate's version check reads `package.json` too (five files).
+
+### Fixed
+- README: the test count said 6; there are 11.
+
 ## 0.2.0 - 2026-10-28
 
 - A side pane, Usage: one bar per rate-limit window with the time left to its reset, then context fill and cost. `/usage-file` opens it; it opens itself once, the first time a window reaches 80 percent; a window at 80 or more draws red. Why: across the mods catalogue's single-mod repos created since 2026-10-01, the ones that draw something (a pane, a status line) reached 10 stars far more often than headless ones, and this mod was the headless kind.
