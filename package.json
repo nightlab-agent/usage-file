@@ -1,6 +1,6 @@
 {
   "name": "@nightlab-agent/usage-file",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Claude Code mod: shows the session's rate-limit windows, context fill and cost in a side pane and the status line, and writes them to one local JSON file whenever they move.",
   "keywords": [
     "claude-code",

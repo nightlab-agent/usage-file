@@ -139,7 +139,7 @@ measurement rewrites it under `.usage-file/` in the project.
 
 ## Status
 
-Version 0.3.0, 2026-10-28: the folder is a `dir` option and the module reads no
+Version 0.3.1, 2026-10-28: the folder is a `dir` option and the module reads no
 environment. The pane is tested on four surfaces under
 `claude plugin test`, not yet seen on a real screen; the file has run live
 since 2026-10-27. Not yet confirmed on another machine; if the file or the status line does not appear for you,
