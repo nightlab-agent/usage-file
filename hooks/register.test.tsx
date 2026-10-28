@@ -1,4 +1,8 @@
 import { expect, mock, test } from 'claude-code/testing'
+import type { TestBody } from 'claude-code/testing'
+
+// What the engine stamps on a typed command: the person at the composer.
+const RUN = { origin: { kind: 'composer' }, presentation: { isFullscreen: false, columns: 100 } } as const
 import type { SessionMeasureInput } from 'claude-code'
 
 // Each test stands for the engine beneath the plugin: it answers `$.fs.write`,
@@ -6,8 +10,8 @@ import type { SessionMeasureInput } from 'claude-code'
 // and reads what the plugin wrote. Nothing here touches the real file system.
 
 type Written = { path: string; text: string }
-type On = Parameters<Parameters<typeof test>[1]>[1]
-type Dollar = Parameters<Parameters<typeof test>[1]>[0]
+type On = Parameters<TestBody>[1]
+type Dollar = Parameters<TestBody>[0]
 
 const world = (on: On, opts: { writeFails?: boolean; noSession?: boolean } = {}) => {
   const writes: Written[] = []
@@ -129,7 +133,7 @@ test('the pane opens itself once, at the first window that reaches 80 percent, a
   const opens: string[] = []
   on('ui.open', (_, e) => {
     opens.push(e.id)
-    return { value: undefined }
+    return { value: { isPlaced: true } }
   })
   await $.session.measure(measurement())
   expect(opens.length).toBe(0)
@@ -153,12 +157,12 @@ test('the command opens the pane and answers with the figures, or says none came
   const opens: string[] = []
   on('ui.open', (_, e) => {
     opens.push(e.id)
-    return { value: undefined }
+    return { value: { isPlaced: true } }
   })
-  const before = await $.command.run({ command: 'usage-file', args: '' })
+  const before = await $.command.run({ command: 'usage-file', args: '', ...RUN })
   expect(before.text).toBe('Usage pane opened. No measurement yet in this session.')
   await $.session.measure(measurement())
-  const after = await $.command.run({ command: 'usage-file', args: '' })
+  const after = await $.command.run({ command: 'usage-file', args: '', ...RUN })
   expect(after.text).toBe('Usage pane opened. 5h 23.5% | 7d 61% | ctx 20% | $1.23')
   expect(opens).toEqual(['usage-file', 'usage-file'])
 })
