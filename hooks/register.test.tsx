@@ -106,3 +106,72 @@ test('without USAGE_FILE_DIR the file goes under $HOME/.usage-file/, and a secon
   expect(got.context.tokens).toBe(null)
   expect(got.changed.length).toBe(1)
 })
+
+const PANE = {
+  plugin: 'usage-file',
+  component: 'Pane',
+  requestId: 'usage-file',
+  props: { title: 'Usage', isFocused: false, bodyColumns: 80, placement: 'dock', scroll: { offset: 0, bodyRows: 20 }, view: {} },
+} as const
+
+test('the pane draws one bar per window with the time to its reset, on every surface', async ($, on) => {
+  world(on, { USAGE_FILE_DIR: '/usage' })
+  const soon = new Date(Date.now() + (2 * 60 + 5) * 60000 + 30000).toISOString()
+  await $.session.measure(measurement({ rateLimits: [{ kind: 'five_hour', percentUsed: 23.5, resetsAt: soon }, { kind: 'seven_day', percentUsed: 61 }] }))
+  for (const surface of ['terminal', 'desktop', 'vscode', 'mobile'] as const) {
+    const ui = await $.ui.mount({ ...PANE, surface })
+    const five = await ui.find({ type: 'Text', text: /^5-hour/ })
+    expect(five?.text).toBe('5-hour      ██░░░░░░░░  23.5%  resets in 2h 05m')
+    const week = await ui.find({ type: 'Text', text: /^Weekly/ })
+    expect(week?.text).toBe('Weekly      ██████░░░░  61%')
+    expect((await ui.find({ type: 'Text', text: /^Context/ }))?.text).toBe('Context     ██░░░░░░░░  20%')
+    expect((await ui.find({ type: 'Text', text: /^Cost/ }))?.text).toBe('Cost        $1.23')
+    await ui.unmount()
+  }
+})
+
+test('the pane opens itself once, at the first window that reaches 80 percent, and never below it', async ($, on) => {
+  world(on, { USAGE_FILE_DIR: '/usage' })
+  const opens: string[] = []
+  on('ui.open', (_, e) => {
+    opens.push(e.id)
+    return { value: undefined }
+  })
+  await $.session.measure(measurement())
+  expect(opens.length).toBe(0)
+  await $.session.measure(measurement({ rateLimits: [{ kind: 'five_hour', percentUsed: 80 }] }))
+  await $.session.measure(measurement({ rateLimits: [{ kind: 'five_hour', percentUsed: 91 }] }))
+  expect(opens).toEqual(['usage-file'])
+})
+
+test('a surface that seats no panes refuses the open, and the file is still written', async ($, on) => {
+  const { writes } = world(on, { USAGE_FILE_DIR: '/usage' })
+  on('ui.open', () => {
+    throw new Error('no panes on this surface')
+  })
+  const r = await $.session.measure(measurement({ rateLimits: [{ kind: 'seven_day', percentUsed: 95 }] }))
+  expect(writes.length).toBe(1)
+  expect(r.changed.length).toBe(3)
+})
+
+test('the command opens the pane and answers with the figures, or says none came yet', async ($, on) => {
+  world(on, { USAGE_FILE_DIR: '/usage' })
+  const opens: string[] = []
+  on('ui.open', (_, e) => {
+    opens.push(e.id)
+    return { value: undefined }
+  })
+  const before = await $.command.run({ command: 'usage-file', args: '' })
+  expect(before.text).toBe('Usage pane opened. No measurement yet in this session.')
+  await $.session.measure(measurement())
+  const after = await $.command.run({ command: 'usage-file', args: '' })
+  expect(after.text).toBe('Usage pane opened. 5h 23.5% | 7d 61% | ctx 20% | $1.23')
+  expect(opens).toEqual(['usage-file', 'usage-file'])
+})
+
+test('a value an earlier version stored is declined, and the pane says no measurement yet', async ($, on) => {
+  on('state.get', () => ({ value: { value: { old: 1 }, version: 1 } }))
+  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+  expect((await ui.find({ type: 'Text', text: /yet/ }))?.text).toBe('No measurement yet in this session.')
+  await ui.unmount()
+})

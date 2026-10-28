@@ -4,8 +4,9 @@
 |---|---|
 | `CLAUDE.md` | First, always. |
 | `README.md` | You are a user installing it, or checking what it does not do. |
-| `hooks/register.ts` | You are changing what is written or shown. |
-| `hooks/register.test.ts` | You changed the module: `claude plugin test .` runs it. |
+| `hooks/register.tsx` | You are changing what is written, shown in the status line, or drawn in the pane. |
+| `hooks/register.test.tsx` | You changed the module: `claude plugin test .` runs it. |
+| `types/index.d.ts` | You changed what the pane stores: the state contract `validate` checks. |
 | `tests/release.sh` | You are releasing: validate then test, exit non-zero on either failing; `nightlab-release.json` names it. |
 | `CHANGELOG.md` | You are cutting a version: what changed and why. |
 | `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, `hooks/hooks.json` | You are changing how the plugin installs or which module it loads. |

@@ -1,8 +1,7 @@
 # usage-file (front desk)
 
-Nested ICM of a Nightlab bet. Brain: `/workspace`
-(`05-artifacts/bets/2026-10-28-usage-file/BRIEF.md`, ledger entry on
-placement). Read this, then `00-catalog/CATALOG.md`, then only what it
+Nested ICM of a Nightlab bet. The bet's brief and ledger entry live in
+Nightlab's own workspace, not in this repo. Read this, then `00-catalog/CATALOG.md`, then only what it
 points to.
 
 One hooks module, no dependencies: on the engine's `session.measure` event

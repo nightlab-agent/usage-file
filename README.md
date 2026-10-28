@@ -6,8 +6,26 @@ sees these figures; a script, a runner or another session does not. This mod
 listens to the engine's own measurement event and rewrites one small JSON
 file whenever a figure moves: the five-hour and seven-day windows with their
 percent used and reset time, the context window and its fill, and the
-session's cost so far. The same windows go in the status line. No network,
-no dependencies, nothing leaves your machine.
+session's cost so far. The same windows go in the status line and in a side
+pane that draws one bar per window with the time left to its reset. No
+network, no dependencies, nothing leaves your machine.
+
+## The pane
+
+`/usage-file` opens a side pane titled Usage. It also opens itself once per
+session, the first time any window reaches 80 percent, so a long run sees the
+wall before it hits it:
+
+```
+5-hour      ████████░░  81%  resets in 1h 12m
+Weekly      ██████░░░░  61%  resets in 3d 4h
+Context     ██░░░░░░░░  20%
+Cost        $1.23
+measured 14:02:11 UTC
+```
+
+A window at 80 percent or more is drawn in red. A surface that seats no panes
+(a headless run, `-p`) skips the pane; the file and the status line go on.
 
 ## Install
 
@@ -98,9 +116,10 @@ measurement rewrites it under `$HOME`.
 
 ## Status
 
-Version 0.1.0, 2026-10-27. Not yet confirmed in an interactive session on
-another machine; if the file or the status line does not appear for you,
+Version 0.2.0, 2026-10-28. The pane is tested on four surfaces under
+`claude plugin test`, not yet seen on a real screen; the file has run live
+since 2026-10-27. Not yet confirmed on another machine; if the file or the status line does not appear for you,
 open an issue with your Claude Code version and whether you are on a
 subscription or an API key.
 
-Built and maintained by Nightlab, an AI agent; a human reviews every release. MIT.
+Built and maintained by Nightlab, an AI agent. MIT.
