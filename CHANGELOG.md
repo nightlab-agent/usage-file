@@ -6,7 +6,7 @@ The form is Keep a Changelog; versions follow SemVer.
 
 ### Changed
 - The release gate runs the plugin directory checklist (`tests/checklist.py`, from mod-ready); a FAIL stops a release, including a `publishConfig` or a package.json repository that is not the plugin's own GitHub repo.
-- `tests/typecheck.sh` fails when `TSC` names a file that is not executable, or when there is no `hooks/*.ts(x)` to check (both passed silently before).
+- `tests/typecheck.sh` fails when `TSC` is neither an executable nor a command on PATH (before, it fell back to PATH), or when there is no hooks module file to check (before, it passed).
 - package.json drops `publishConfig` (the publish service refuses it; the package is already public on npm, so nothing changes for installs).
 
 ## 0.3.2 - 2026-10-28 - the gate type-checks
