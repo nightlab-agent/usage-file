@@ -14,8 +14,8 @@ import type { Shown } from '../types'
 // file; nothing has to poll an API.
 //
 // DESIGN NOTE, deliberately narrow: it never denies, never rewrites an event,
-// never polls, never reads settings or credentials, never touches the
-// network. A failed write is swallowed: the file is advisory, and a gauge
+// never polls, reads only the events the engine hands it and sends
+// nothing off the machine. A failed write is swallowed: the file is advisory, and a gauge
 // that stops the engine would be worse than no gauge. It speaks only when the
 // engine says a unit changed; steady state is one status line and one file.
 //

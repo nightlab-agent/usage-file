@@ -90,6 +90,22 @@ sessions on one machine write the same file; the last measurement wins, and
 window fills reads `rateLimits[].percentUsed` between checks; a session can
 read its own file and decide to wind down.
 
+## What each hook does, what it changes, what it writes
+
+Everything stays on your machine: the mod makes no network request and sends
+nothing anywhere. It only reads the events Claude Code hands it.
+
+| Hook | What it does | Changes |
+|---|---|---|
+| `session.start` | Registers the `/usage-file` command. | Nothing. |
+| `command.run` (`/usage-file`) | Opens the side pane. | Nothing. |
+| `ui.render` (its own pane) | Draws one bar per window from the last measurement. | Nothing. |
+| `session.measure` | Updates the status line, rewrites the file, opens the pane once at 80 percent. | Nothing: the event passes through untouched. |
+
+It writes one file, `~/.usage-file/latest.json` (or under `USAGE_FILE_DIR`),
+holding only the figures listed below and the session id. No prompt or reply
+text is stored.
+
 ## What it does not do
 
 It does not poll: with no measurement from the engine there is no write, so
@@ -123,7 +139,7 @@ measurement rewrites it under `$HOME`.
 
 ## Status
 
-Version 0.2.1, 2026-10-28. The pane is tested on four surfaces under
+Version 0.2.2, 2026-10-28. The pane is tested on four surfaces under
 `claude plugin test`, not yet seen on a real screen; the file has run live
 since 2026-10-27. Not yet confirmed on another machine; if the file or the status line does not appear for you,
 open an issue with your Claude Code version and whether you are on a
