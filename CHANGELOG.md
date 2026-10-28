@@ -5,6 +5,7 @@ The form is Keep a Changelog; versions follow SemVer.
 ## [Unreleased]
 
 ### Changed
+- The release gate runs the plugin directory checklist (`tests/checklist.py`, from mod-ready); a FAIL stops a release.
 - package.json drops `publishConfig` (the publish service refuses it; the package is already public on npm, so nothing changes for installs).
 
 ## 0.3.2 - 2026-10-28 - the gate type-checks
