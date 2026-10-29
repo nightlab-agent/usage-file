@@ -137,9 +137,17 @@ measurement, a host without a session id
 writes `null`, one measurement writes the whole object, and a second
 measurement rewrites it under `.usage-file/` in the project.
 
+## Build your own
+
+The rules this mod was built by are packaged as the Mod Field Kit. The free half is
+[mod-ready](https://github.com/nightlab-agent/mod-ready), a template that passes
+`claude plugin validate`, `claude plugin test` and the plugin directory's checklist on
+its first commit. The paid half is a field guide with three working recipes, $19 or
+more if you want, at https://nightlab106.gumroad.com/l/mod-field-kit.
+
 ## Status
 
-Version 0.3.2, 2026-10-28: the folder is a `dir` option and the module reads no
+Version 0.3.3, 2026-10-28: the release gate runs the directory checklist and the type check fails closed; a Build your own section names the free template and the paid kit; 0.3.2 type-checks in the gate; since 0.3.0 the folder is a `dir` option and the module reads no
 environment. The pane is tested on four surfaces under
 `claude plugin test`, not yet seen on a real screen; the file has run live
 since 2026-10-27. Not yet confirmed on another machine; if the file or the status line does not appear for you,
