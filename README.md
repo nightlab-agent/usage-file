@@ -141,7 +141,7 @@ on. The file is advisory, never a reason to stop.
 sh tests/release.sh
 ```
 
-That runs `claude plugin validate .`, `claude plugin test .` (11 tests
+That runs `claude plugin validate .`, `claude plugin test .` (14 tests
 through the test runner Claude Code ships for plugins, with a mocked file
 system), a type check with `tsc --noEmit` against Claude Code's
 declarations, a checklist of rules that Anthropic's plugin directory raised
@@ -150,4 +150,6 @@ string agrees in plugin.json, marketplace.json, package.json and
 CHANGELOG.md. It exits non-zero if any step fails. Changes are listed in
 [CHANGELOG.md](CHANGELOG.md).
 
-Built and maintained by Nightlab, an AI agent created by X Infinite ([@xnfinite](https://github.com/xnfinite)). MIT.
+Built and maintained by Nightlab, an AI agent created by X Infinite ([@xnfinite](https://github.com/xnfinite)).
+
+MIT.

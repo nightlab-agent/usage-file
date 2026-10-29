@@ -4,6 +4,22 @@ The form is Keep a Changelog; versions follow SemVer.
 
 ## [Unreleased]
 
+## 0.4.1 - 2026-10-29 - an older measurement no longer replaces a newer one
+
+### Fixed
+- Two measurements at once each wait on the session id before writing the file. When the first one's answer came
+  back late, its older figures (20 percent, say) landed on top of the newer ones (80 percent) in the file. Now
+  each measurement is numbered as it arrives, the file is written from the newest one, one write at a time; a
+  measurement that finds a write in flight marks the file as owed and goes on, and the writing one writes again
+  until nothing is owed, then returns; so no measurement waits on an earlier one's write, and the file holds
+  the newest measurement's figures and its `changed` list. The pane keeps the newest by the same number.
+  A failed write is made up by the next measurement. Found by karanb192 reviewing awesome-claude-code-mods
+  PR #427; the test fails on 0.4.0.
+- The `.gitignore` write happens inside that same single writer, so two first measurements at once write it once.
+
+### Changed
+- `tsconfig.json`, which Claude Code lays beside a loaded mod with its type declarations, is ignored by git (seen beside file-trail on 2026-10-29 after a session loaded it). `tests/typecheck.sh` tells tsc to ignore such an untracked file: tsc 7.0.2 stopped on it with error TS5112.
+
 ## 0.4.0 - 2026-10-29 - the folder is kept out of git
 
 ### Added
@@ -16,22 +32,22 @@ The form is Keep a Changelog; versions follow SemVer.
   longer carries a version history (this file does), and no longer advertises other products.
 - `tests/release.sh` checks the version string in four files (the README no longer carries one).
 
-## 0.3.3 - 2026-10-28 - the gate fails closed and runs the checklist; the README names the kit
+## 0.3.3 - 2026-10-28 - the release script fails closed and runs the checklist; the README names the kit
 
 ### Added
 - README: a Build your own section names the free template (mod-ready) and the paid Mod Field Kit.
 
 ### Changed
-- The release gate runs the plugin directory checklist (`tests/checklist.py`, from mod-ready); a FAIL stops a release, including a `publishConfig` or a package.json repository that is not the plugin's own GitHub repo.
+- The release script runs the plugin directory checklist (`tests/checklist.py`, from mod-ready); a FAIL stops a release, including a `publishConfig` or a package.json repository that is not the plugin's own GitHub repo.
 - `tests/typecheck.sh` fails when `TSC` is neither an executable nor a command on PATH (before, it fell back to PATH), or when there is no hooks module file to check (before, it passed).
 - package.json drops `publishConfig` (the publish service refuses it; the package is already public on npm, so nothing changes for installs).
 
-## 0.3.2 - 2026-10-28 - the gate type-checks
+## 0.3.2 - 2026-10-28 - the release script type-checks
 
 ### Changed
-- The release gate type-checks the hooks module, its tests and the state contract with `tsc --noEmit` against the
+- The release script type-checks the hooks module, its tests and the state contract with `tsc --noEmit` against the
   engine's own declarations (`tests/typecheck.sh`, the compiler options the declarations' header gives a hooks module).
-  No `tsc` or no declarations fails the gate; it never skips.
+  No `tsc` or no declarations fails the release script; it never skips.
 
 ### Fixed
 - Test inputs are now complete to the engine's types (the full `command.run`, `agent.spawn` or `turn.step` shapes the tests left out). No behaviour change.
@@ -59,7 +75,7 @@ The form is Keep a Changelog; versions follow SemVer.
 
 ### Added
 - `package.json`: the plugin is published to npm as `@nightlab-agent/usage-file` (plugin files only, no scripts), so a marketplace can install it from an npm source.
-- The release gate's version check reads `package.json` too (five files).
+- The release script's version check reads `package.json` too (five files).
 
 ### Fixed
 - README: the test count said 6; there are 11.
@@ -69,9 +85,9 @@ The form is Keep a Changelog; versions follow SemVer.
 - A side pane, Usage: one bar per rate-limit window with the time left to its reset, then context fill and cost. `/usage-file` opens it; it opens itself once, the first time a window reaches 80 percent; a window at 80 or more draws red. Why: across the mods catalogue's single-mod repos created since 2026-10-01, the ones that draw something (a pane, a status line) reached 10 stars far more often than headless ones, and this mod was the headless kind.
 - Types contract `types/index.d.ts` names the pane's state (`usage-file.latest`); the module is now `register.tsx`.
 - Tests: 11 (was 6): the pane on four surfaces, the open at 80 and only once, a surface with no panes, the command before and after a measurement, a stale stored value declined.
-- Own icon (two gauge bars; 0.1.0's build carried turn-tally's by mistake) and the release gate now asserts the version string in all four files, as turn-tally 0.2.1 does. Why: version strings moving together is a craft rule, and an icon shared between two mods misleads the catalogue.
+- Own icon (two gauge bars; 0.1.0's build carried turn-tally's by mistake) and the release script now asserts the version string in all four files, as turn-tally 0.2.1 does. Why: version strings moving together is a craft rule, and an icon shared between two mods misleads the catalogue.
 
 ## 0.1.0 - 2026-10-27
 
 - First version: one `session.measure` hook writes `$USAGE_FILE_DIR/latest.json` (else `$HOME/.usage-file/latest.json`) with the rate-limit windows, context fill, cost and which units changed, and shows the windows in the status line. Why: open asks on anthropics/claude-code for usage and limits in a local file or the status line (#21943, #73770, #80261, read 2026-10-27) and nothing of ours covered the main session.
-- Tests: `hooks/register.test.ts` under `claude plugin test` (6); `tests/release.sh` runs validate then test and is the publish gate.
+- Tests: `hooks/register.test.ts` under `claude plugin test` (6); `tests/release.sh` runs validate then test and is the publish check.

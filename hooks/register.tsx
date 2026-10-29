@@ -1,5 +1,5 @@
 import { atom, read, update } from 'claude-code'
-import type { Register, SessionMeasureInput } from 'claude-code'
+import type { EngineInterface, Register, SessionMeasureInput } from 'claude-code'
 
 import type { Shown } from '../types'
 
@@ -99,9 +99,41 @@ const shownStatus = (s: Shown) =>
     changed: [],
   } as SessionMeasureInput) ?? 'No figures yet.'
 
+/** The file's state in this session: whether a write is in flight, whether one is owed, whether
+ * `<dir>/.gitignore` has been written, and the newest measurement to write. */
+type UsageFile = { writing: boolean; owed: boolean; ignore: boolean; newest: { e: SessionMeasureInput; session: string } | null }
+
+/** One write at a time, always from the newest measurement. Two measurements can wait at once, on
+ * `$.session.id()` or on a write; if the earlier one's answer came back late, its figures would land on
+ * top of the newer ones. A measurement that finds a write in flight marks the file as owed and goes on;
+ * the writing one writes again, from the newest measurement, until nothing is owed. A failed write is
+ * made up by the next measurement. Before the first write of a session: `<dir>/.gitignore` holding `*`,
+ * so git ignores the folder in every project with no step from the user. */
+async function writeUsage($: EngineInterface, dir: string, file: UsageFile) {
+  if (file.writing) {
+    file.owed = true
+    return
+  }
+  file.writing = true
+  try {
+    do {
+      file.owed = false
+      if (!file.ignore) {
+        await $.fs.write(`${dir}/.gitignore`, '*\n')
+        file.ignore = true
+      }
+      if (file.newest) await $.fs.write(`${dir}/latest.json`, fileText(file.newest.e, file.newest.session, new Date()))
+    } while (file.owed)
+  } finally {
+    file.writing = false
+  }
+}
+
 export const register: Register = (on, options) => {
-  // whether this session has written the folder's .gitignore yet
-  const done = { ignore: false }
+  // Numbers each measurement in the order the engine raised them; the file is written from the newest one.
+  let seq = 0
+  const file: UsageFile = { writing: false, owed: false, ignore: false, newest: null }
+
   on('session.start', async ($, e, next) => {
     try {
       await $.command.register({ name: 'usage-file', description: 'Show the rate-limit windows, context and cost of this session, in a pane' })
@@ -142,13 +174,15 @@ export const register: Register = (on, options) => {
   })
 
   on('session.measure', async ($, e, next) => {
+    const mine = ++seq
     try {
       $.ui.status(statusText(e))
     } catch {
       // a surface with no status line; the file still gets written
     }
     try {
-      await update($, shown, () => ({
+      // a newer measurement already shown keeps the pane; this one's figures are behind it
+      await update($, shown, s => (mine !== seq ? s : {
         at: new Date().toISOString(),
         windows: e.rateLimits.map(w => ({ kind: w.kind, percentUsed: w.percentUsed, resetsAt: w.resetsAt ?? null })),
         context: e.context.percent ?? null,
@@ -170,13 +204,9 @@ export const register: Register = (on, options) => {
       } catch {
         // no session id on this host: the file says null
       }
-      // Before the first write of a session: `<dir>/.gitignore` holding `*`, so git ignores the folder in
-      // every project with no step from the user.
-      if (!done.ignore) {
-        await $.fs.write(`${dir}/.gitignore`, '*\n')
-        done.ignore = true
-      }
-      await $.fs.write(`${dir}/latest.json`, fileText(e, session, new Date()))
+      // a newer measurement already came while this one waited; its figures are the ones to write
+      if (mine === seq) file.newest = { e, session }
+      await writeUsage($, dir, file)
     } catch {
       // unwritable folder: the file is advisory, the session goes on
     }

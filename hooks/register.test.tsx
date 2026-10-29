@@ -183,3 +183,72 @@ test('before its first write the mod writes <dir>/.gitignore holding one line, *
   expect(writes.filter(w => w.path.endsWith('/.gitignore')).length).toBe(1)
   expect(writes.filter(w => w.path.endsWith('/latest.json')).length).toBe(2)
 })
+
+test('two measurements at once: the first one\'s session id comes back late, and the newer figures stay in the file', async ($, on) => {
+  const writes: Written[] = []
+  on('fs.write', (_, e) => {
+    writes.push({ path: e.path, text: e.text })
+    return { value: undefined }
+  })
+  on('ui.status', () => ({ value: undefined }))
+  on('session.measure', (_, e) => ({ changed: e.changed }))
+  // the first session id read waits until the second measurement has written
+  let release!: () => void
+  const held = new Promise<void>(resolve => {
+    release = resolve
+  })
+  let reads = 0
+  on('session.id', async () => {
+    if (++reads === 1) await held
+    return { value: 'sess-1' }
+  })
+  const older = $.session.measure(measurement({ rateLimits: [{ kind: 'five_hour', percentUsed: 20 }] }))
+  const newer = $.session.measure(measurement({ rateLimits: [{ kind: 'five_hour', percentUsed: 80 }] }))
+  await newer
+  release()
+  await older
+  const files = writes.filter(w => w.path.endsWith('/latest.json'))
+  expect(parsed(files.at(-1)!).rateLimits[0].percentUsed).toBe(80)
+  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+  expect((await ui.find({ type: 'Text', text: /^5-hour/ }))?.text).toContain('80%')
+  await ui.unmount()
+})
+
+test('control: two measurements one after the other each write the file, the second with the newer figures', async ($, on) => {
+  const { writes } = world(on)
+  await $.session.measure(measurement({ rateLimits: [{ kind: 'five_hour', percentUsed: 20 }] }))
+  await $.session.measure(measurement({ rateLimits: [{ kind: 'five_hour', percentUsed: 80 }] }))
+  const files = writes.filter(w => w.path.endsWith('/latest.json'))
+  expect(files.length).toBe(2)
+  expect(parsed(files[0]!).rateLimits[0].percentUsed).toBe(20)
+  expect(parsed(files[1]!).rateLimits[0].percentUsed).toBe(80)
+})
+
+test('three measurements at once share one writer, the figures never going back; a failed write is made up by the next', async ($, on) => {
+  const writes: Written[] = []
+  let fail = false
+  on('session.id', () => ({ value: 'sess-1' }))
+  on('ui.status', () => ({ value: undefined }))
+  on('session.measure', (_, e) => ({ changed: e.changed }))
+  // every write takes a few turns of the event loop, so measurements overlap it
+  on('fs.write', async (_, e) => {
+    for (let i = 0; i < 5; i++) await Promise.resolve()
+    if (fail) throw new Error('disk full')
+    writes.push({ path: e.path, text: e.text })
+    return { value: undefined }
+  })
+  await Promise.all([
+    $.session.measure(measurement({ rateLimits: [{ kind: 'five_hour', percentUsed: 20 }] })),
+    $.session.measure(measurement({ rateLimits: [{ kind: 'five_hour', percentUsed: 50 }] })),
+    $.session.measure(measurement({ rateLimits: [{ kind: 'five_hour', percentUsed: 80 }] })),
+  ])
+  const files = writes.filter(w => w.path.endsWith('/latest.json')).map(w => parsed(w).rateLimits[0].percentUsed as number)
+  expect(files.at(-1)).toBe(80)
+  for (let i = 1; i < files.length; i++) expect(files[i]!).toBeGreaterThanOrEqual(files[i - 1]!)
+  expect(writes.filter(w => w.path.endsWith('/.gitignore')).length).toBe(1)
+  fail = true
+  await $.session.measure(measurement({ rateLimits: [{ kind: 'five_hour', percentUsed: 85 }] }))
+  fail = false
+  await $.session.measure(measurement({ rateLimits: [{ kind: 'five_hour', percentUsed: 90 }] }))
+  expect(parsed(writes.filter(w => w.path.endsWith('/latest.json')).at(-1)!).rateLimits[0].percentUsed).toBe(90)
+})
