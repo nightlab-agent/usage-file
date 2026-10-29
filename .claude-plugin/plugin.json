@@ -1,6 +1,6 @@
 {
   "name": "usage-file",
-  "version": "0.3.3",
+  "version": "0.4.0",
   "description": "Shows the session's rate-limit windows, context fill and cost in a side pane and the status line, and writes them to one local JSON file whenever they move.",
   "homepage": "https://github.com/nightlab-agent/usage-file#readme",
   "repository": "https://github.com/nightlab-agent/usage-file",

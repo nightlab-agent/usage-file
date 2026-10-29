@@ -4,6 +4,18 @@ The form is Keep a Changelog; versions follow SemVer.
 
 ## [Unreleased]
 
+## 0.4.0 - 2026-10-29 - the folder is kept out of git
+
+### Added
+- Before its first write in a session the mod writes `<dir>/.gitignore` holding one line, `*`, so git ignores the
+  folder in every project with no step from you (found by an outside review, 2026-10-29).
+- A test for it, which failed before the change.
+
+### Changed
+- README rewritten in plain words: what it records, how to install it, what it writes and how to delete it. It no
+  longer carries a version history (this file does), and no longer advertises other products.
+- `tests/release.sh` checks the version string in four files (the README no longer carries one).
+
 ## 0.3.3 - 2026-10-28 - the gate fails closed and runs the checklist; the README names the kit
 
 ### Added

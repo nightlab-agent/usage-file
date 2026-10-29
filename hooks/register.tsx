@@ -100,6 +100,8 @@ const shownStatus = (s: Shown) =>
   } as SessionMeasureInput) ?? 'No figures yet.'
 
 export const register: Register = (on, options) => {
+  // whether this session has written the folder's .gitignore yet
+  const done = { ignore: false }
   on('session.start', async ($, e, next) => {
     try {
       await $.command.register({ name: 'usage-file', description: 'Show the rate-limit windows, context and cost of this session, in a pane' })
@@ -167,6 +169,12 @@ export const register: Register = (on, options) => {
         session = await $.session.id()
       } catch {
         // no session id on this host: the file says null
+      }
+      // Before the first write of a session: `<dir>/.gitignore` holding `*`, so git ignores the folder in
+      // every project with no step from the user.
+      if (!done.ignore) {
+        await $.fs.write(`${dir}/.gitignore`, '*\n')
+        done.ignore = true
       }
       await $.fs.write(`${dir}/latest.json`, fileText(e, session, new Date()))
     } catch {
