@@ -4,6 +4,14 @@ The form is Keep a Changelog; versions follow SemVer.
 
 ## [Unreleased]
 
+## 0.4.2 - 2026-10-29 - moved to subagent-spend
+
+### Changed
+- Everything this mod does moved to subagent-spend 0.7.0, under the option `usageFile` (on by default), with the same
+  `.usage-file/latest.json` path and format. The README now points there. The code stays here, unchanged, for anyone
+  who has it installed; uninstall it before installing subagent-spend, or both write the same file.
+- `tests/checklist.py`: a README that starts with `# Moved to` passes the README content rules.
+
 ## 0.4.1 - 2026-10-29 - an older measurement no longer replaces a newer one
 
 ### Fixed

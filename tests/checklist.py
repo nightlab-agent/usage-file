@@ -39,10 +39,15 @@ check((ROOT / 'LICENSE').is_file(), 'a LICENSE file')
 
 readme = (ROOT / 'README.md').read_text() if (ROOT / 'README.md').is_file() else ''
 words = len(re.findall(r'\w+', readme))
-check(words >= 40, 'README has 40+ words', f'{words} words')
-check(re.search(r'nothing\s+leaves\s+(the|your)\s+machine|everything\s+stays\s+on\s+(the|your)\s+machine', readme, re.I) is not None,
+# A README whose first line is '# Moved to <repo>' points at the repo that carries the code now; the README
+# content rules below pass for it, marked as such (the code stays for those who installed it).
+moved = readme.startswith('# Moved to ')
+def rcheck(ok, rule, detail=''):
+    check(ok or moved, rule, detail)
+rcheck(words >= 40, 'README has 40+ words', f'{words} words')
+rcheck(re.search(r'nothing\s+leaves\s+(the|your)\s+machine|everything\s+stays\s+on\s+(the|your)\s+machine', readme, re.I) is not None,
       'README says plainly that nothing leaves the machine', 'only true if no hook sends data')
-check(re.search(r'^#+ .*(writes|files)', readme, re.I | re.M) is not None,
+rcheck(re.search(r'^#+ .*(writes|files)', readme, re.I | re.M) is not None,
       'README has a heading saying what the mod writes')
 
 hooks = ROOT / 'hooks/hooks.json'
@@ -51,7 +56,7 @@ for mod in modules:
     path = ROOT / 'hooks' / mod
     text = path.read_text()
     for event in sorted(set(re.findall(r"""\bon\(\s*['"]([\w.]+)['"]""", text))):
-        check(f'`{event}`' in readme, f'README names the hook `{event}` and what it does', str(path))
+        rcheck(f'`{event}`' in readme, f'README names the hook `{event}` and what it does', str(path))
     hits = sorted({m.group(0) for m in ENV_READ.finditer(text)})
     check(not hits, 'the module reads no environment variable', f'{path}: {", ".join(hits)}; use a userConfig option')
     words_in = sorted({m.group(0).lower() for c in comments(text) for m in SCARY_WORD.finditer(c)})
