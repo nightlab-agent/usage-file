@@ -93,7 +93,7 @@ host that has none.
 The file holds those figures and the session id. No prompt or reply text is
 stored. To forget it, end the session and delete the folder: a running
 session writes the file again at its next measurement. Nothing reads the
-file but you.
+file but you, or a runner you point at it.
 
 The file is rewritten whole, so a reader never sees a partial object. Two
 sessions on one machine write the same file; the last measurement wins, and
