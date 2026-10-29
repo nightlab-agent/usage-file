@@ -1,6 +1,6 @@
 # usage-file
 
-Writes Claude Code's rate-limit windows, context fill and cost to a file.
+Claude Code's usage limits, context fill and cost, in a file.
 
 The status line sees these figures; a script, a runner or another session
 does not. This mod (a plugin that adds behaviour to Claude Code) listens to
@@ -50,10 +50,12 @@ key.
 
 ## What you see
 
-`/usage-file` opens the pane, titled Usage. It also opens itself once per
-session, the first time any window reaches 80 percent, so a long run sees
-the wall before it hits it. A window at 80 percent or more is drawn in red.
-Where Claude Code draws no panes (a `-p` run) the pane is skipped; the file
+`/usage-file` opens the pane, titled Usage. It also asks to open itself
+once, the first time any window reaches 80 percent, so a long run sees the
+limit before it hits it. Claude Code places a pane nobody asked for only
+when the terminal is at least 144 columns wide; narrower, it waits until
+you run the command. A window at 80 percent or more is drawn in red. Where
+Claude Code draws no panes (a `-p` run) the pane is never placed; the file
 and the status line go on.
 
 Status line: `5h 23.5% | 7d 61% | ctx 20% | $1.23`, showing only the
@@ -95,9 +97,11 @@ stored. To forget it, end the session and delete the folder: a running
 session writes the file again at its next measurement. Nothing reads the
 file but you, or a runner you point at it.
 
-The file is rewritten whole, so a reader never sees a partial object. Two
-sessions on one machine write the same file; the last measurement wins, and
-`session` says which one wrote it. A runner that wants to stop before a
+The file is rewritten whole each time. Claude Code makes no promise that
+the write is atomic, so a reader that finds the file unparsable should read
+it again. Two sessions in the same project (or with the same absolute
+`dir`) write the same file; the last measurement wins, and `session` says
+which one wrote it. A runner that wants to stop before a
 window fills reads `rateLimits[].percentUsed` between checks; a session can
 read its own file and decide to wind down.
 
