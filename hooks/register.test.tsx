@@ -21,6 +21,7 @@ const world = (on: On, opts: { writeFails?: boolean; noSession?: boolean } = {})
     writes.push({ path: e.path, text: e.text })
     return { value: undefined }
   })
+  on('fs.exists', (_, e) => ({ value: writes.some(w => w.path === e.path) }))
   on('ui.status', (_, e) => {
     statuses.push(e.text)
     return { value: undefined }
@@ -174,7 +175,7 @@ test('a value an earlier version stored is declined, and the pane says no measur
   await ui.unmount()
 })
 
-test('before its first write the mod writes <dir>/.gitignore holding one line, *, once, so git never sees the folder', async ($, on) => {
+test('before its first write the mod writes <dir>/.gitignore holding one line, *, once while it stays, so git never sees the folder', async ($, on) => {
   const { writes } = world(on)
   await $.session.measure(measurement())
   await $.session.measure(measurement())
@@ -190,6 +191,7 @@ test('two measurements at once: the first one\'s session id comes back late, and
     writes.push({ path: e.path, text: e.text })
     return { value: undefined }
   })
+  on('fs.exists', (_, e) => ({ value: writes.some(w => w.path === e.path) }))
   on('ui.status', () => ({ value: undefined }))
   on('session.measure', (_, e) => ({ changed: e.changed }))
   // the first session id read waits until the second measurement has written
@@ -237,6 +239,7 @@ test('three measurements at once share one writer, the figures never going back;
     writes.push({ path: e.path, text: e.text })
     return { value: undefined }
   })
+  on('fs.exists', (_, e) => ({ value: writes.some(w => w.path === e.path) }))
   await Promise.all([
     $.session.measure(measurement({ rateLimits: [{ kind: 'five_hour', percentUsed: 20 }] })),
     $.session.measure(measurement({ rateLimits: [{ kind: 'five_hour', percentUsed: 50 }] })),
@@ -251,4 +254,42 @@ test('three measurements at once share one writer, the figures never going back;
   fail = false
   await $.session.measure(measurement({ rateLimits: [{ kind: 'five_hour', percentUsed: 90 }] }))
   expect(parsed(writes.filter(w => w.path.endsWith('/latest.json')).at(-1)!).rateLimits[0].percentUsed).toBe(90)
+})
+
+test('with dir set to the project itself, the project\'s own .gitignore is left alone', { options: { dir: '.' } }, async ($, on) => {
+  const writes: Written[] = []
+  on('fs.exists', (_, e) => ({ value: e.path.endsWith('/.gitignore') }))
+  on('fs.write', (_, e) => {
+    writes.push({ path: e.path, text: e.text })
+    return { value: undefined }
+  })
+  on('ui.status', () => ({ value: undefined }))
+  on('session.id', () => ({ value: 'sess-1' }))
+  on('session.measure', (_, e) => ({ changed: e.changed }))
+  await $.session.measure(measurement())
+  expect(writes.filter(w => w.path.endsWith('.gitignore')).length).toBe(0)
+  expect(writes.filter(w => w.path.endsWith('latest.json')).length).toBe(1)
+})
+
+test('a folder of the user\'s that holds its own .gitignore keeps it as it was', { options: { dir: '/home/u/notes' } }, async ($, on) => {
+  const writes: Written[] = []
+  on('fs.exists', (_, e) => ({ value: e.path === '/home/u/notes/.gitignore' }))
+  on('fs.write', (_, e) => {
+    writes.push({ path: e.path, text: e.text })
+    return { value: undefined }
+  })
+  on('ui.status', () => ({ value: undefined }))
+  on('session.id', () => ({ value: 'sess-1' }))
+  on('session.measure', (_, e) => ({ changed: e.changed }))
+  await $.session.measure(measurement())
+  expect(writes.map(w => w.path)).toEqual(['/home/u/notes/latest.json'])
+})
+
+test('the folder deleted while a session runs gets its .gitignore again before the next file', async ($, on) => {
+  const { writes } = world(on)
+  await $.session.measure(measurement())
+  writes.length = 0
+  await $.session.measure(measurement())
+  expect(writes[0]!.path.endsWith('/.usage-file/.gitignore')).toBe(true)
+  expect(writes[0]!.text).toBe('*\n')
 })

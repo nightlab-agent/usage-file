@@ -99,16 +99,16 @@ const shownStatus = (s: Shown) =>
     changed: [],
   } as SessionMeasureInput) ?? 'No figures yet.'
 
-/** The file's state in this session: whether a write is in flight, whether one is owed, whether
- * `<dir>/.gitignore` has been written, and the newest measurement to write. */
-type UsageFile = { writing: boolean; owed: boolean; ignore: boolean; newest: { e: SessionMeasureInput; session: string } | null }
+/** The file's state in this session: whether a write is in flight, whether one is owed, and the newest
+ * measurement to write. */
+type UsageFile = { writing: boolean; owed: boolean; newest: { e: SessionMeasureInput; session: string } | null }
 
 /** One write at a time, always from the newest measurement. Two measurements can wait at once, on
  * `$.session.id()` or on a write; if the earlier one's answer came back late, its figures would land on
  * top of the newer ones. A measurement that finds a write in flight marks the file as owed and goes on;
  * the writing one writes again, from the newest measurement, until nothing is owed. A failed write is
- * made up by the next measurement. Before the first write of a session: `<dir>/.gitignore` holding `*`,
- * so git ignores the folder in every project with no step from the user. */
+ * made up by the next measurement. Before each write, where the folder has no .gitignore:
+ * `<dir>/.gitignore` holding `*`, so git ignores the folder in every project with no step from the user. */
 async function writeUsage($: EngineInterface, dir: string, file: UsageFile) {
   if (file.writing) {
     file.owed = true
@@ -118,9 +118,11 @@ async function writeUsage($: EngineInterface, dir: string, file: UsageFile) {
   try {
     do {
       file.owed = false
-      if (!file.ignore) {
+      // Only where no .gitignore is: one already there may be the user's (dir may name the project
+      // itself, `.`), and one that is gone (the folder deleted while a session runs) is written again. A
+      // check that fails counts as a file there, so a .gitignore is never written over one.
+      if (dir.replace(/[\\/]+$/, '') !== '.' && !(await $.fs.exists(`${dir}/.gitignore`).catch(() => true))) {
         await $.fs.write(`${dir}/.gitignore`, '*\n')
-        file.ignore = true
       }
       if (file.newest) await $.fs.write(`${dir}/latest.json`, fileText(file.newest.e, file.newest.session, new Date()))
     } while (file.owed)
@@ -132,7 +134,7 @@ async function writeUsage($: EngineInterface, dir: string, file: UsageFile) {
 export const register: Register = (on, options) => {
   // Numbers each measurement in the order the engine raised them; the file is written from the newest one.
   let seq = 0
-  const file: UsageFile = { writing: false, owed: false, ignore: false, newest: null }
+  const file: UsageFile = { writing: false, owed: false, newest: null }
 
   on('session.start', async ($, e, next) => {
     try {

@@ -4,6 +4,15 @@ The form is Keep a Changelog; versions follow SemVer.
 
 ## [Unreleased]
 
+## 0.4.3 - 2026-11-12
+
+### Fixed
+- With `dir` naming a folder that already held a `.gitignore` (the project itself, `.`, or a folder of
+  yours), that file was replaced by one line, `*`. A `.gitignore` already there is now left as it is,
+  and none is written when `dir` is `.`.
+- A `.usage-file` folder deleted while a session ran came back without its `.gitignore`. It is now
+  checked before each write and written again when it is gone.
+
 ## 0.4.2 - 2026-10-29 - moved to subagent-spend
 
 ### Changed
