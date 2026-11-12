@@ -8,8 +8,9 @@ The form is Keep a Changelog; versions follow SemVer.
 
 ### Fixed
 - With `dir` naming a folder that already held a `.gitignore` (the project itself, `.`, or a folder of
-  yours), that file was replaced by one line, `*`. A `.gitignore` already there is now left as it is,
-  and none is written when `dir` is `.`.
+  yours), that file was replaced by one line, `*`. The `.gitignore` is now written only in a folder
+  named `.usage-file` (the default, or a path ending in it) that has none; a folder of another name is
+  left to you: add it to your project's `.gitignore` if it is inside one.
 - A `.usage-file` folder deleted while a session ran came back without its `.gitignore`. It is now
   checked before each write and written again when it is gone.
 

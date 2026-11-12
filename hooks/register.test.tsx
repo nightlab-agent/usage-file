@@ -72,11 +72,11 @@ test('a host with no session id writes the file with session null', async ($, on
   expect(parsed(writes[1]!).session).toBe(null)
 })
 
-test('one measurement writes one JSON file under the dir option with the windows, the context, the cost and what changed', { options: { dir: '/usage' } }, async ($, on) => {
+test('one measurement writes one JSON file under the dir option with the windows, the context, the cost and what changed', { options: { dir: '/usage/.usage-file' } }, async ($, on) => {
   const { writes, statuses } = world(on)
   await $.session.measure(measurement())
   expect(writes.length).toBe(2)
-  expect(writes[1]!.path).toBe('/usage/latest.json')
+  expect(writes[1]!.path).toBe('/usage/.usage-file/latest.json')
   const got = parsed(writes[1]!)
   expect(got.session).toBe('sess-1')
   expect(got.rateLimits[0].kind).toBe('five_hour')

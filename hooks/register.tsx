@@ -118,10 +118,11 @@ async function writeUsage($: EngineInterface, dir: string, file: UsageFile) {
   try {
     do {
       file.owed = false
-      // Only where no .gitignore is: one already there may be the user's (dir may name the project
-      // itself, `.`), and one that is gone (the folder deleted while a session runs) is written again. A
-      // check that fails counts as a file there, so a .gitignore is never written over one.
-      if (dir.replace(/[\\/]+$/, '') !== '.' && !(await $.fs.exists(`${dir}/.gitignore`).catch(() => true))) {
+      // Only in a folder named .usage-file, and only where no .gitignore is: a folder of another name may
+      // hold the user's files (even be the project itself, however it is spelled), and one that is gone (the
+      // folder deleted while a session runs) is written again. A check that fails counts as a file there,
+      // so a .gitignore is never written over one.
+      if (dir.replace(/[\\/]+$/, '').split(/[\\/]/).at(-1) === '.usage-file' && !(await $.fs.exists(`${dir}/.gitignore`).catch(() => true))) {
         await $.fs.write(`${dir}/.gitignore`, '*\n')
       }
       if (file.newest) await $.fs.write(`${dir}/latest.json`, fileText(file.newest.e, file.newest.session, new Date()))
